@@ -200,6 +200,10 @@ SUSHY_TOOLS_IMAGE=${SUSHY_TOOLS_LOCAL_IMAGE:-$SUSHY_TOOLS_IMAGE}
 # Start httpd container
 if [[ $OS == ubuntu ]]; then
   #shellcheck disable=SC2086
+  if sudo ${CONTAINER_RUNTIME} inspect /httpd-infra >/dev/null ; then
+	  sudo "${CONTAINER_RUNTIME}" stop httpd-infra || true
+	  sudo "${CONTAINER_RUNTIME}" rm httpd-infra || true
+  fi
   sudo "${CONTAINER_RUNTIME}" run -d --net host --privileged --name httpd-infra ${POD_NAME_INFRA} \
       -v "$IRONIC_DATA_DIR":/shared --entrypoint /bin/runhttpd \
       --env "PROVISIONING_INTERFACE=ironicendpoint" "${IRONIC_IMAGE}"
@@ -212,10 +216,20 @@ fi
 
 # Start vbmc and sushy containers
 #shellcheck disable=SC2086
+if sudo ${CONTAINER_RUNTIME} inspect /vbmc >/dev/null ; then
+	  sudo "${CONTAINER_RUNTIME}" stop vbmc || true
+	  sudo "${CONTAINER_RUNTIME}" rm vbmc || true
+fi
+#shellcheck disable=SC2086
 sudo "${CONTAINER_RUNTIME}" run -d --net host --name vbmc ${POD_NAME_INFRA} \
      -v "$WORKING_DIR/virtualbmc/vbmc":/root/.vbmc -v "/root/.ssh":/root/ssh \
      "${VBMC_IMAGE}"
 
+#shellcheck disable=SC2086
+if sudo ${CONTAINER_RUNTIME} inspect sushy-tools >/dev/null ; then
+	  sudo "${CONTAINER_RUNTIME}" stop sushy-tools || true
+	  sudo "${CONTAINER_RUNTIME}" rm sushy-tools || true
+fi
 #shellcheck disable=SC2086
 sudo "${CONTAINER_RUNTIME}" run -d --net host --name sushy-tools ${POD_NAME_INFRA} \
      -v "$WORKING_DIR/virtualbmc/sushy-tools":/root/sushy -v "/root/.ssh":/root/ssh \

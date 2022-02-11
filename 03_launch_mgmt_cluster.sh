@@ -479,6 +479,8 @@ function start_management_cluster () {
     if [[ "${PROVISIONING_IPV6}" == "true" ]]; then
       sudo su -l -c 'minikube ssh "sudo ip -6 addr add '"$CLUSTER_PROVISIONING_IP/$PROVISIONING_CIDR"' dev eth2"' "${USER}"
     else
+      sudo su -l -c "minikube ssh sudo ip link set down $CLUSTER_PROVISIONING_INTERFACE || true" "${USER}"
+      sudo su -l -c "minikube ssh sudo brctl delbr $CLUSTER_PROVISIONING_INTERFACE || true" "${USER}"
       sudo su -l -c "minikube ssh sudo brctl addbr $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
       sudo su -l -c "minikube ssh sudo ip link set $CLUSTER_PROVISIONING_INTERFACE up" "${USER}"
       sudo su -l -c "minikube ssh sudo brctl addif $CLUSTER_PROVISIONING_INTERFACE eth2" "${USER}"
