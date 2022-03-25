@@ -216,7 +216,7 @@ EOF
   fi
 
   if [ "$NODES_PLATFORM" == "libvirt" ] ; then
-    echo "IRONIC_KERNEL_PARAMS=console=ttyS0" | sudo tee -a "$IRONIC_DATA_DIR/ironic_bmo_configmap.env"
+    echo "IRONIC_KERNEL_PARAMS=console=ttyS0 coreos.autologin" | sudo tee -a "$IRONIC_DATA_DIR/ironic_bmo_configmap.env"
   fi
 
   if [ "${EPHEMERAL_CLUSTER}" != "minikube" ]; then
@@ -501,7 +501,11 @@ clone_repos
 create_clouds_yaml
 if [ "${EPHEMERAL_CLUSTER}" != "tilt" ]; then
   start_management_cluster
-  kubectl create namespace metal3
+  if ! kubectl get ns metal3 ; then
+      kubectl create namespace metal3
+  else
+	clusterctl delete --all
+  fi
 
   patch_clusterctl
   launch_cluster_api_provider_metal3

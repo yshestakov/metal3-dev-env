@@ -27,14 +27,24 @@ if [ "$MANAGE_PRO_BRIDGE" == "y" ]; then
       else
         sudo ip addr add dev ironicendpoint "$PROVISIONING_IP"/"$PROVISIONING_CIDR" || true
      fi
-     sudo brctl delif provisioning ironic-peer || true
-     sudo brctl addif provisioning ironic-peer
+     if [ -x /usr/bin/ovs-vsctl ] ; then
+	     # OpenVSwitch
+	     sudo /usr/bin/ovs-vsctl del-port provisioning ironic-peer || true
+	     sudo /usr/bin/ovs-vsctl add-port provisioning ironic-peer
+     else
+	     # legacy bridge-utils
+	     sudo brctl delif provisioning ironic-peer || true
+	     sudo brctl addif provisioning ironic-peer
+     fi
      sudo ip link set ironicendpoint up
      sudo ip link set ironic-peer up
-
      # Need to pass the provision interface for bare metal
      if [ "$PRO_IF" ]; then
-       sudo brctl addif provisioning "$PRO_IF"
+       if [ -x /usr/bin/ovs-vsctl ] ; then
+           sudo ovs-vsctl add-port provisioning "$PRO_IF"
+       else
+           sudo brctl addif provisioning "$PRO_IF"
+       fi
      fi
  fi
 
